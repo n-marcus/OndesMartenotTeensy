@@ -102,15 +102,18 @@ void mapData() {
   }
   //  vol = volSmooth.smooth(vol,0.5);
   //Serial.println("Vol = " + String(vol));
+  
   filterFreq = map(sensorValue2, 0, 1023, 10000, 10);
+  
   freqOffset = (sensorValue3 - (1023.0 / 2.0)) / 25.0;
   //Serial.println("Freqoffset = " + String(freqOffset));
-  midiFreq = midi[int((sensorValue1 * 0.5 ) / 5.0) + 30];
+
+  //quantizing to midi notes
+  midiFreq = midi[int((sensorValue1 * 0.5 ) / 5.0) + 30]; //expand physical range and offset by 30 midi notes
+  //smoothing the midi notes
   freq = as.smooth(midiFreq);
   Serial.println(freq);
   //freq = (sensorValue1 * 0.5) + freqOffset;
-
-  //Serial.println("Freq = " + String(freq));
 }
 
 void audio() {
