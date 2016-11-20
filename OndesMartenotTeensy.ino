@@ -2,7 +2,6 @@
    Gametrack pins:
    Black = 5V
    Green = Ground
-
    Orange = cord
    Yellow and red are x & Y
 */
@@ -12,6 +11,7 @@
 #include <SD.h>
 #include <SerialFlash.h>
 #include <math.h>
+#include <AnalogSmooth.h>
 //#include <SmootherClass.h>
 
 // GUItool: begin automatically generated code
@@ -24,10 +24,11 @@ AudioConnection          patchCord3(biquad1, 0, i2s1, 1);
 // GUItool: end automatically generated code
 
 //Smoother volSmooth();
+AnalogSmooth as = AnalogSmooth(100);
 
 AudioControlSGTL5000 audioShield;
 
-float freq = 440;
+
 
 float sensorPin1 = A0;    // select the input pin for the potentiometer
 int sensorPin2 = A1;    // select the input pin for the potentiometer
@@ -42,14 +43,9 @@ int sensorValue4;
 int ledPin1 = 13;      // select the pin for the LED
 int ledPin2 = 21;      // select the pin for the LED
 
-//Smoothing stuff
-const int numReadings = 1000;
-int readings[numReadings];      // the readings from the analog input
-int readIndex = 0;              // the index of the current reading
-int total = 0;                  // the running total
-int average = 0;                // the average
-
 float vol = 0.5;
+float freq = 440;
+float midiFreq = 0;
 int filterFreq = 10000;
 float freqOffset = 0.0;
 
@@ -67,7 +63,6 @@ void setup() {
   Serial.println("Hello, I am alive!");
 
   initAudio();
-  initSmoothing();
 
   //The "I am alive" blink and sound
   digitalWrite(ledPin1, HIGH);   // set the LED on
@@ -90,7 +85,6 @@ void setup() {
 void loop() {
   analogReadings();
   mapData();
-  smoothValue1();
   tuner();
   audio();
   visual();
@@ -111,7 +105,8 @@ void mapData() {
   filterFreq = map(sensorValue2, 0, 1023, 10000, 10);
   freqOffset = (sensorValue3 - (1023.0 / 2.0)) / 25.0;
   //Serial.println("Freqoffset = " + String(freqOffset));
-  freq = midi[int((sensorValue1 * 0.5 ) / 5.0) + 30];
+  midiFreq = midi[int((sensorValue1 * 0.5 ) / 5.0) + 30];
+  freq = as.smooth(midiFreq);
   Serial.println(freq);
   //freq = (sensorValue1 * 0.5) + freqOffset;
 
@@ -177,29 +172,5 @@ void analogReadings() {
   //Serial.println("Analog 3 = "  + String(sensorValue4));
 }
 
-void initSmoothing() {
-  //Smoothing stuff
-  for (int thisReading = 0; thisReading < numReadings; thisReading++) {
-    readings[thisReading] = 0;
-  }
-}
-
-
-void smoothValue1() {
-  //Smoothing stuff
-  total = total - readings[readIndex];
-  readings[readIndex] = sensorValue1;
-  total = total + readings[readIndex];
-  readIndex = readIndex + 1;
-  // if we're at the end of the array...
-  if (readIndex >= numReadings) {
-    // ...wrap around to the beginning:
-    readIndex = 0;
-  }
-  // calculate the average:
-  average = total / numReadings;
-  //Serial.println("Average = " + String(average));
-
-}
 
 
