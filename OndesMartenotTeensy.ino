@@ -42,11 +42,10 @@ AudioConnection          patchCord12(mixer1, 0, i2s1, 1);
 
 
 //Smoother volSmooth();
-AnalogSmooth as = AnalogSmooth(100);
+AnalogSmooth freqSmooth = AnalogSmooth(100);
+AnalogSmooth volumeSmooth = AnalogSmooth(100000);
 
 AudioControlSGTL5000 audioShield;
-
-
 
 float sensorPin1 = A0;    // select the input pin for the potentiometer
 int sensorPin2 = A1;    // select the input pin for the potentiometer
@@ -148,12 +147,18 @@ void visual() {
 
 void mapData() {
   //mapping data to audio
-  vol = (map(sensorValue4, 0, 1023, 100, 0) / 75.0);
+  vol = volumeSmooth.smooth(sensorValue4);
+  vol = (map(vol, 0, 1023, 100, 0) / 75.0); //map the volume from 100 to 0 and divide by 75 to create range(0 - 1.33) and smooth it
   if (freq < 20) {
     vol = 0.0;
   }
   //  vol = volSmooth.smooth(vol,0.5);
-  //Serial.println("Vol = " + String(vol));
+  Serial.print("Vol = " );
+  for (int i = 0; i < vol* 40.0; i ++) { 
+    Serial.print("*");
+  }
+  Serial.println("");
+  
 
   filterFreq = map(sensorValue2, 0, 1023, 10000, 10);
 
@@ -164,7 +169,7 @@ void mapData() {
   midiFreq = midi[int((sensorValue1 * 0.5 ) / 5.0) + 30]; //expand physical range and offset by 30 midi notes
   //Serial.println(sensorValue1);
   //smoothing the midi notes
-  freq = as.smooth(midiFreq);
+  freq = freqSmooth.smooth(midiFreq);
   freq = freq + freqOffset;
   //Serial.println(freq);
   //freq = (sensorValue1 * 0.5) + freqOffset;
